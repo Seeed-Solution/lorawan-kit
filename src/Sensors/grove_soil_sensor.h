@@ -4,14 +4,14 @@
 #include "sensor.h"
 #include "utils.h"
 #include "Arduino.h"
-#include "SoftwareI2C.h"
 
 #define SOILPIN D1
 #define READ_NUM 10
 #define SOIL_DATA_MAX 1000
 #define DATA_VARIANCE_MAX 20
-#define SOFTWRIE_SDAPIN SDA
-#define SOFTWRIE_SCLPIN SCL
+
+#define SOFTWRIE_SOIL_SDAPIN SDA
+#define SOFTWRIE_SOIL_SCLPIN SCL
 
 class grove_soil_sensor : public sensor_base {
   public:

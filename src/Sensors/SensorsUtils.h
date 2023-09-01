@@ -4,8 +4,7 @@
 #include "Arduino.h"
 #include "Wire.h"
 #include "SoftwareI2C.h"
-
-#define SENSOR_READ_DELAY 1000
+#include "SysConfig.h"
 
 #define SOFT_I2C_SCL D1
 #define SOFT_I2C_SDA D2

@@ -71,7 +71,7 @@ LoRaThread::LoRaThread(SysConfig &config) : cfg(config){};
 
 void LoRaThread::Init()
 {
-    if (!lorae5->begin(DSKLORAE5_SWSERIAL_PINS, NULL, NULL, D2, D3)) {
+    if (!lorae5->begin(DSKLORAE5_SWSERIAL_PINS, NULL, NULL, LORA_RX, LORA_TX)) {
         cfg.lora_status = LORA_INIT_FAILED;
         LOGSS.println("LoRa E5 Init Failed");
         return;
@@ -236,7 +236,7 @@ bool LoRaThread::SendGroveSensorData()
                     LOGSS.printf("<<<Soil hum: %d>>>\r\n, ", (((int32_t *)data.data)[0]));
                     break;
                 case GROVE_DHT:
-                    LOGSS.printf("<<<temperature: %.2f, humidity: %.2f>>>\r\n", (((float *)data.data)[0]), (((float *)data.data)[1]) );
+                    LOGSS.printf("<<<temperature: %.2f, humidity: %.2f>>>\r\n", (((float *)data.data)[0]), (((float *)data.data)[1]));
                     sdata.d0 = BSWAP16(static_cast<uint16_t>(((float *)data.data)[0]));
                     sdata.d1 = BSWAP16(static_cast<uint16_t>(((float *)data.data)[1]));
                 // case GROVE_SGP30:
@@ -342,24 +342,30 @@ void LoRaThread::Run()
     // init the library, search the LORAE5 over the different WIO port available
     // LOGSS.begin(9600);
     LOGSS.println("LoRa E5 Run..");
-    lorae5 = new Disk91_LoRaE5(&LOGSS);
+
+    if (lorae5 == NULL) {
+        lorae5 = new Disk91_LoRaE5(&LOGSS);
+    }
     // Init();
     while (true) {
-        if (cfg.lora_on) {
-            LOGSS.printf("LoRa Sensor number: %d  %d \r\n", lora_data.size(), lora_data.capacity());
+        if (cfg.lock() && cfg.lora_on) {
             if (cfg.lora_status == LORA_INIT_START || cfg.lora_status == LORA_INIT_FAILED) {
                 // try to init the LoRa E5 5s after the last failure
-                delay(5000);
+                delay(LORA_INIT_DELAY);
                 Init();
+                cfg.unlock();
                 continue;
             }
 
             if (cfg.lora_status == LORA_INIT_SUCCESS || cfg.lora_status == LORA_JOIN_FAILED) {
                 // try to join the LoRa E5 5 minutes  after the last failure
-                DelayMinutes(1);
+                // DelayMinutes(1);
+                delay(LORA_JOIN_DELAY);
                 Join();
+                cfg.unlock();
                 continue;
             }
+            LOGSS.printf("LoRa Sensor number: %d  %d \r\n", lora_data.size(), lora_data.capacity());
             if (cfg.lora_status != LORA_JOIN_FAILED) {
                 lora_data_ready = false;
                 // if (!SendBuildinSensorData()) {
@@ -371,9 +377,10 @@ void LoRaThread::Run()
                 // }
                 if (!SendGroveSensorData()) {
                     lora_data_ready = true;
-                    // try to send the grove sensor data 5 minutes  after the last failure
-                    DelayMinutes(5);
+                    // try to send the grove sensor data after the last failure
+                    delay(LORA_SEND_FAIL_DELAY);
                     // Delay(Ticks::SecondsToTicks(30));
+                    cfg.unlock();
                     continue;
                 }
                 // if (!SendAiVisionData()) {
@@ -387,7 +394,9 @@ void LoRaThread::Run()
             // clear all data in the lora_data queue
 
             lora_data_ready = true;
-            DelayMinutes(5);
+            cfg.unlock();
+            delay(LORA_SEND_DELAY);
+            // DelayMinutes(5);
             // Delay(Ticks::SecondsToTicks(30));
         } else {
             cfg.lora_status     = LORA_INIT_START;

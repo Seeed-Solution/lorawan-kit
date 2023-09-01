@@ -11,6 +11,9 @@
 
 // create a buttion class use ooFreeRTOS task
 
+#define LORA_RX D7
+#define LORA_TX D6
+
 class LoRaThread{
   public:
     LoRaThread(SysConfig &config);

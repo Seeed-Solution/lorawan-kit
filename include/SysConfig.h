@@ -9,7 +9,12 @@
 #include <task.h>
 
 #include <stdint.h>
+#define SENSOR_READ_DELAY 3000
 
+#define LORA_INIT_DELAY 5000          // 5s
+#define LORA_JOIN_DELAY 1000 * 60     // 1min
+#define LORA_SEND_DELAY 1000 * 60 * 5 // 5min
+#define LORA_SEND_FAIL_DELAY 1000 * 30 // 30s
 // X Macro
 #define STORE_KEYS               \
     X(ENUM_SSID, "SSID")         \
@@ -78,13 +83,16 @@ class SysConfig
     void ReadAllConfig();
     void ResetAllConfig();
     void ReadConfig(store_keys key);
+    bool lock(TickType_t xTicksToWait = portMAX_DELAY);
+    void unlock();
 
 
   private:
     /* data */
-    bool       spi_flash_mount;
-    bool       cfg_available;
-    ArduinoNvs store;
+    bool              spi_flash_mount;
+    bool              cfg_available;
+    // ArduinoNvs        store;
+    SemaphoreHandle_t xMutex;
     // Adafruit_USBD_MSC usb_msc;
 };
 

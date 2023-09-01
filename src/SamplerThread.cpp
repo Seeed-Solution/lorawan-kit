@@ -10,8 +10,8 @@
 // #include "sensors/grove_vl53l0x_sensor.h"
 #include "sensors/grove_soil_sensor.h"
 // #include "sensors/grove_visionai_sensor.h"
-#include "sensors/grove_dht_sensor.h"
 #include "sensors/SensorsUtils.h"
+#include "sensors/grove_dht_sensor.h"
 
 // #include "SensorsUtils.h"
 // #include "grove_dht11_sensor.h"
@@ -45,6 +45,14 @@ void SamplerThread::Run()
     }
 
     while (true) {
+        if (cfg.lock()) {
+            if ((this->cfg.lora_status != LORA_JOIN_SUCCESS && this->cfg.lora_status != LORA_SEND_SUCCESS)) {
+                LOGSS.println("Sampler: Wait for LoRa To Join");
+                delay(5000);
+                continue;
+            }
+            cfg.unlock();
+        }
         std::vector<sensor_data *> datas;
         for (auto sensor : sensors) {
             if (sensor->read(&sdata)) {

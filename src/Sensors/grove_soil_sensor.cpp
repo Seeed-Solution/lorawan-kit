@@ -5,7 +5,8 @@ grove_soil_sensor::grove_soil_sensor() {
 }
 void grove_soil_sensor::init() {
     // is_available = (Grove_I2C_Check(softwarei2c)) ? false : true;
-    is_available = (Grove_I2C_Check(Wire)) ? true : false;
+    // is_available = (Grove_I2C_Check(Wire)) ? true : false;
+    is_available = true;
 }
 
 bool grove_soil_sensor::read(struct sensor_data *sdata) {
@@ -28,12 +29,11 @@ bool grove_soil_sensor::read(struct sensor_data *sdata) {
         variance = variance + pow(data[i] - sum / READ_NUM, 2);
     }
     variance = variance / READ_NUM;
-
-    LOGSS.println("Soil Sensor: " + String(variance));
     
     if (variance > DATA_VARIANCE_MAX || sum / READ_NUM > SOIL_DATA_MAX)
         return false;
     soil_value       = sum / READ_NUM;
+    LOGSS.println("Soil Sensor: " + String(soil_value));
     sdata->data      = &soil_value;
     sdata->data_type = SENSOR_DATA_TYPE_INT32;
     sdata->size      = sizeof(soil_value);

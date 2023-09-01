@@ -4,3 +4,5 @@
 .vscode/launch.json
 .vscode/ipch
 xxx
+xiaos3-bin2uf2/*.bin
+xiaos3-bin2uf2/firmware.uf2

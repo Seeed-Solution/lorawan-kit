@@ -1,7 +1,8 @@
 #include "SysConfig.h"
 
 extern "C" {
-void cm_printf(const char *format, ...) {
+void cm_printf(const char *format, ...)
+{
     char print_buf[1024] = {0};
 
     va_list args;
@@ -15,20 +16,30 @@ void cm_printf(const char *format, ...) {
 }
 }
 
-static void msc_flush_cb(void) {
+static void msc_flush_cb(void)
+{
 }
 
-SysConfig::SysConfig(/* args */) {
+SysConfig::SysConfig(/* args */)
+{
+    xMutex = xSemaphoreCreateMutex();
+    if (xMutex == NULL) {
+        LOGSS.println("SysConfig: Mutex was not created");
+        // Mutex was not created.
+        // Handle the error here.
+    }
 }
 
-SysConfig::~SysConfig() {
+SysConfig::~SysConfig()
+{
 }
 
-void SysConfig::init() {
+void SysConfig::init()
+{
 
-    store.begin("SysConfig");
-    
-    ReadAllConfig();
+    // store.begin("SysConfig");
+
+    // ReadAllConfig();
 
     // 挂载文件系统
     // if (SysConfig::lock == NULL) {
@@ -70,28 +81,26 @@ void SysConfig::init() {
 // }
 
 
-void SysConfig::ReadAllConfig() {
-    cfg_available = true;
+void SysConfig::ReadAllConfig()
+{
+    cfg_available  = true;
     String DevAddr = String(NVS.getString(store_keys_str[ENUM_DevAddr]));
-    String DevEui = String(NVS.getString(store_keys_str[ENUM_DevEui]));
-    String AppEui = String(NVS.getString(store_keys_str[ENUM_AppEui]));
-    
-    if(DevAddr != ""){
-        LOGSS.printf("Read DevAddr: %s\r\n",DevAddr);
-    }
-    else{
+    String DevEui  = String(NVS.getString(store_keys_str[ENUM_DevEui]));
+    String AppEui  = String(NVS.getString(store_keys_str[ENUM_AppEui]));
+
+    if (DevAddr != "") {
+        LOGSS.printf("Read DevAddr: %s\r\n", DevAddr);
+    } else {
         LOGSS.println("NVS is empty");
     }
-    if(DevEui != ""){
-        LOGSS.printf("Read DevEui: %s\r\n",DevEui);
-    }
-    else{
+    if (DevEui != "") {
+        LOGSS.printf("Read DevEui: %s\r\n", DevEui);
+    } else {
         LOGSS.println("NVS is empty");
     }
-    if(AppEui != ""){
-        LOGSS.printf("Read AppEui: %s\r\n",AppEui);
-    }
-    else{
+    if (AppEui != "") {
+        LOGSS.printf("Read AppEui: %s\r\n", AppEui);
+    } else {
         LOGSS.println("NVS is empty");
     }
 }
@@ -116,3 +125,15 @@ void SysConfig::ReadAllConfig() {
 //         LOGSS.println("NVS is empty");
 //     }
 // }
+
+// Lock/Take the mutex
+bool SysConfig::lock(TickType_t xTicksToWait)
+{
+    return xSemaphoreTake(xMutex, xTicksToWait) == pdTRUE;
+}
+
+// Unlock/Give the mutex
+void SysConfig::unlock()
+{
+    xSemaphoreGive(xMutex);
+}
