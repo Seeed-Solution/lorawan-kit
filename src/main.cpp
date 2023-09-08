@@ -35,40 +35,52 @@ static void SamplerThreadWrapper(void *param)
 }
 TaskHandle_t LoRataskHandle    = NULL;
 TaskHandle_t SamplertaskHandle = NULL;
-void setup()
+SamplerThread *sampler;
+void _config()
 {
     LOGSS.begin(9600);
     Wire.begin();
 
     // uint32_t start = millis();
     // while (!LOGSS && (millis() - start) < 1500)
-        ; // Open the Serial Monitor to get started or wait for 1.5"
+    ; // Open the Serial Monitor to get started or wait for 1.5"
 
     /*Shared Configuration | System status*/
     SysConfig *cfg      = new SysConfig();
-    // cfg->lora_frequency = DSKLORAE5_ZONE_EU868;
-    cfg->lora_frequency = DSKLORAE5_ZONE_US915;
+    cfg->lora_frequency = DSKLORAE5_ZONE_EU868;
+    // cfg->lora_frequency = DSKLORAE5_ZONE_US915;
     cfg->init();
 
     delay(1000);
-    SamplerThread *sampler = new SamplerThread(*cfg);
+    sampler = new SamplerThread(*cfg);
+    // SamplerThread *sampler = new SamplerThread(*cfg);
     /*Create Sampler Thread for Senor data measuring*/
-    xTaskCreate(SamplerThreadWrapper, "sample", 4098, sampler, 1, &SamplertaskHandle);
-
+    xTaskCreate(SamplerThreadWrapper, "sample", 1024 * 10, sampler, 1, &SamplertaskHandle);
+    // LOGSS.println("Sampler Thread Created");
     /*Create LoRa Thread for Communication*/
     // LoRaThread *lora = new LoRaThread(*cfg);
     sampler->lora = new LoRaThread(*cfg);
     // sampler->lora = lora;
     // xTaskCreate(LoRaThreadWrapper, "lora", 4098, lora, 1, NULL);
-    xTaskCreate(LoRaThreadWrapper, "lora", 4098, sampler->lora, 2, &LoRataskHandle);
 
+    xTaskCreate(LoRaThreadWrapper, "lora", 1024 * 10, sampler->lora, 2, &LoRataskHandle);
+
+    // LOGSS.println("LoRa Thread Created");
     // xTaskCreate(TestThread, "test", 4098, NULL, 1, NULL);
 
     // cmd_init();
 }
 
+void setup()
+{
+    // test();
+    _config();
+}
+
 void loop()
 {
+    // LOGSS.println("Hello World");
+    // delay(5000);
     // cmd.poll();
     // using I2C_Detect to deteck I2C device
 }

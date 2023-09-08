@@ -16,10 +16,6 @@ void cm_printf(const char *format, ...)
 }
 }
 
-static void msc_flush_cb(void)
-{
-}
-
 SysConfig::SysConfig(/* args */)
 {
     xMutex = xSemaphoreCreateMutex();

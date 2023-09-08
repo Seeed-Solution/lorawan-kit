@@ -40,7 +40,6 @@ bool grove_dht_sensor::read(struct sensor_data *sdata)
     if (dht->readTempAndHumidity(temp_hum_val) != 0) {
         sdata->status = false;
     } else {
-        sdata->status = true;
         LOGSS.print("Temperature: ");
         LOGSS.print(temp_hum_val[1]);
         LOGSS.print(" *C\t");
@@ -48,16 +47,17 @@ bool grove_dht_sensor::read(struct sensor_data *sdata)
         LOGSS.print(temp_hum_val[0]);
         LOGSS.println(" %");
 
-        trans_val[0]     = (temp_hum_val[1] * 100);
-        trans_val[1]     = (temp_hum_val[0] * 100);
+        data[0]     = (int)(temp_hum_val[1] * 100);
+        data[1]     = (int)(temp_hum_val[0] * 100);
 
-        sdata->data      = &trans_val[0];
+        sdata->data      = &data[0];
         sdata->data_type = SENSOR_DATA_TYPE_FLOAT;
-        sdata->size      = sizeof(trans_val);
+        sdata->size      = sizeof(data);
         sdata->id        = GROVE_DHT;
         sdata->name      = name;
         sdata->ui_type   = SENSOR_UI_TYPE_NORMAL;
         sdata->data_unit = data_unit;
+        sdata->status = true;
     }
     return true;
 }

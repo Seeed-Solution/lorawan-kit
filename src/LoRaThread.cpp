@@ -154,19 +154,19 @@ bool LoRaThread::SendDeviceInfo()
     return true;
 }
 
-bool LoRaThread::SendVisionAIInfo()
-{
-    // Electricity information
-    uint8_t VisionAI_info[9] = {0x01, 0x09, 0x00, 0x00, 0x00, 0x11, 0x00, 0xEF, 0x36};
+// bool LoRaThread::SendVisionAIInfo()
+// {
+//     // Electricity information
+//     uint8_t VisionAI_info[9] = {0x01, 0x09, 0x00, 0x00, 0x00, 0x11, 0x00, 0xEF, 0x36};
 
-    // Send electricity information
-    if (!SendData(VisionAI_info, 9, v1)) {
-        LOGSS.println("LoRa E5 Send VisionAI Info Failed");
-        return false;
-    }
-    LOGSS.println("LoRa E5 Send VisionAI Info Success");
-    return true;
-}
+//     // Send electricity information
+//     if (!SendData(VisionAI_info, 9, v1)) {
+//         LOGSS.println("LoRa E5 Send VisionAI Info Failed");
+//         return false;
+//     }
+//     LOGSS.println("LoRa E5 Send VisionAI Info Success");
+//     return true;
+// }
 
 // bool LoRaThread::SendBuildinSensorData()
 // {
@@ -224,6 +224,7 @@ bool LoRaThread::SendGroveSensorData()
     sdata.d2                       = 0x80; // tVOC, 6,7
     sdata.d3                       = 0x80; // CO2eq 8,9
     sdata.d4                       = 0x80; // soil 10,11
+    int *int_data;
     /*build sensor data*/
     for (auto data : lora_data) {
         // Copy the data to the buildin buffer in the order of the data id
@@ -235,10 +236,13 @@ bool LoRaThread::SendGroveSensorData()
                     sdata.d4 = BSWAP16(static_cast<uint16_t>(((int32_t *)data.data)[0]));
                     LOGSS.printf("<<<Soil hum: %d>>>\r\n, ", (((int32_t *)data.data)[0]));
                     break;
-                case GROVE_DHT:
-                    LOGSS.printf("<<<temperature: %.2f, humidity: %.2f>>>\r\n", (((float *)data.data)[0]), (((float *)data.data)[1]));
-                    sdata.d0 = BSWAP16(static_cast<uint16_t>(((float *)data.data)[0]));
-                    sdata.d1 = BSWAP16(static_cast<uint16_t>(((float *)data.data)[1]));
+                case GROVE_DHT: {
+                    int_data = (int *)data.data;
+                    LOGSS.printf("<<<temperature: %.2f, humidity: %.2f>>>\r\n", (float)(int_data[0] / 100.0), (float)(int_data[1] / 100.0));
+                    sdata.d0 = BSWAP16(static_cast<uint16_t>(((int32_t *)int_data)[0]));
+                    sdata.d1 = BSWAP16(static_cast<uint16_t>(((int32_t *)int_data)[1]));
+                    break;
+                }
                 // case GROVE_SGP30:
                 //     sdata.d3 = BSWAP16(static_cast<uint16_t>(((int32_t *)data.data)[0]));
                 //     sdata.d2 = BSWAP16(static_cast<uint16_t>(((int32_t *)data.data)[1]));
@@ -352,6 +356,7 @@ void LoRaThread::Run()
             if (cfg.lora_status == LORA_INIT_START || cfg.lora_status == LORA_INIT_FAILED) {
                 // try to init the LoRa E5 5s after the last failure
                 delay(LORA_INIT_DELAY);
+                LOGSS.println("LoRa E5 Init Start");
                 Init();
                 cfg.unlock();
                 continue;

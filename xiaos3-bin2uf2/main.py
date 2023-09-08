@@ -1,9 +1,17 @@
 import subprocess
 import shutil
+from sys import platform
+import os
+
+sysos = os.name
 
 def boot_uf2():
-    command = [
-        "fw\\esptool.exe",
+    command = []
+
+    esptool_name = "esptool.exe" if sysos == "nt" else "esptool-macos" if sysos == "mac" else "esptool-linux"
+    command.append(os.path.join("fw", esptool_name))
+    
+    command.extend ([
         "--chip", "esp32s3",
         "--baud", "115200",
         "--before", "default_reset",
@@ -17,11 +25,10 @@ def boot_uf2():
         "0x8000", "fw\\uf2.partitions.bin",
         "0xe000", "fw\\ota_init.bin",
         "0x410000", "fw\\uf2.bin"
-    ]
+    ])
     subprocess.run(command)
     input("Press Enter to continue...")
-
-
+    
 def convert_uf2():
     # file_name = input("Please enter the name of the bin file to be converted: ")
     command = [
@@ -37,10 +44,21 @@ def convert_uf2():
     ]
     subprocess.run(command)
 
-def copy_uf2_to_destination():
-    source_file = "firmware.uf2"
-    destination_directory = "path_to_the_directory"  # 替换为弹出文件夹的路径
-    shutil.copy(source_file, destination_directory)
+def erase_flash():
+       
+    command = []
+    
+    esptool_name = "esptool.exe" if sysos == "nt" else "esptool-macos" if sysos == "mac" else "esptool-linux"
+    command.append(os.path.join("fw", esptool_name))
+        
+    command.extend([
+        "--chip", "esp32s3",
+        "--baud", "115200",
+        "--after", "hard_reset",
+        "erase_flash"
+    ])
+    subprocess.run(command)
+    input("Press Enter to continue...")
 
 
 def main():
@@ -48,7 +66,8 @@ def main():
         print("Please choose an option:")
         print("1. Run boot_uf2")
         print("2. Run convert_uf2")
-        print("3. Quit")
+        print("3. Run erase_flash")
+        print("x. Quit")
 
         choice = input("> ")
 
@@ -57,9 +76,11 @@ def main():
         elif choice == "2":
             convert_uf2()
         elif choice == "3":
-            break
+            erase_flash()
         else:
-            print("invalid option")
+            # erase_flash()
+            break
+            # print("invalid option")
 
 if __name__ == "__main__":
     main()

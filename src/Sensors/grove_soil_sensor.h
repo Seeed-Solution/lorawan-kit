@@ -7,7 +7,7 @@
 
 #define SOILPIN D1
 #define READ_NUM 10
-#define SOIL_DATA_MAX 1000
+#define SOIL_DATA_MAX 10000
 #define DATA_VARIANCE_MAX 20
 
 #define SOFTWRIE_SOIL_SDAPIN SDA
