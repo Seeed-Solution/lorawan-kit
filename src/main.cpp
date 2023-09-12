@@ -21,21 +21,18 @@
 // #include "grove_dht11_sensor.h"
 #include "SamplerThread.h"
 #include "Sensors/SensorsUtils.h"
-static void LoRaThreadWrapper(void *param)
-{
-    // SamplerThread *sampler = static_cast<SamplerThread *>(param);
-    LoRaThread *lora = static_cast<LoRaThread *>(param);
-    lora->Run();
-}
+// static void LoRaThreadWrapper(void *param)
+// {
+//     // SamplerThread *sampler = static_cast<SamplerThread *>(param);
+//     LoRaThread *lora = static_cast<LoRaThread *>(param);
+//     lora->Run();
+// }
 
-static void SamplerThreadWrapper(void *param)
-{
-    SamplerThread *sampler = static_cast<SamplerThread *>(param);
-    sampler->Run();
-}
-TaskHandle_t LoRataskHandle    = NULL;
-TaskHandle_t SamplertaskHandle = NULL;
+
+TaskHandle_t   LoRataskHandle    = NULL;
+TaskHandle_t   SamplertaskHandle = NULL;
 SamplerThread *sampler;
+
 void _config()
 {
     LOGSS.begin(9600);
@@ -47,33 +44,48 @@ void _config()
 
     /*Shared Configuration | System status*/
     SysConfig *cfg      = new SysConfig();
-    cfg->lora_frequency = DSKLORAE5_ZONE_EU868;
-    // cfg->lora_frequency = DSKLORAE5_ZONE_US915;
+    // cfg->lora_frequency = DSKLORAE5_ZONE_EU868;
+    cfg->lora_frequency = DSKLORAE5_ZONE_US915;
     cfg->init();
 
     delay(1000);
-    sampler = new SamplerThread(*cfg);
-    // SamplerThread *sampler = new SamplerThread(*cfg);
-    /*Create Sampler Thread for Senor data measuring*/
-    xTaskCreate(SamplerThreadWrapper, "sample", 1024 * 10, sampler, 1, &SamplertaskHandle);
     // LOGSS.println("Sampler Thread Created");
     /*Create LoRa Thread for Communication*/
     // LoRaThread *lora = new LoRaThread(*cfg);
-    sampler->lora = new LoRaThread(*cfg);
+
+    // LoRaThread *lora = new LoRaThread(*cfg);
+
+    // sampler->lora = new LoRaThread(*cfg);
+
     // sampler->lora = lora;
     // xTaskCreate(LoRaThreadWrapper, "lora", 4098, lora, 1, NULL);
 
-    xTaskCreate(LoRaThreadWrapper, "lora", 1024 * 10, sampler->lora, 2, &LoRataskHandle);
+    sampler          = new SamplerThread(*cfg);
 
+    // xTaskCreate(LoRaThreadWrapper, "lora", 1024 * 20, lora, 2, &LoRataskHandle);
+    // xTaskCreate(SamplerThreadWrapper, "sample", 1024 * 20, sampler, 1, &SamplertaskHandle);
+    // xTaskCreate(LoRaThreadWrapper, "lora", 1024 * 20, sampler->lora, 2, &LoRataskHandle);
+    
+
+    if (cfg->lora_frequency == DSKLORAE5_ZONE_EU868) {
+        LOGSS.println("Current Frequency: EU868");
+    } else if (cfg->lora_frequency == DSKLORAE5_ZONE_US915) {
+        LOGSS.println("Current Frequency: US915");
+    } else {
+        LOGSS.println("Current Frequency: UNKNOWN");
+    }
     // LOGSS.println("LoRa Thread Created");
     // xTaskCreate(TestThread, "test", 4098, NULL, 1, NULL);
 
     // cmd_init();
 }
 
+// #endif
 void setup()
 {
     // test();
+    LOGSS.begin(9600);
+    Wire.begin();
     _config();
 }
 

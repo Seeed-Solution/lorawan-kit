@@ -17,18 +17,27 @@
 // #include "grove_dht11_sensor.h"
 // #include "grove_soil_sensor.h"
 #include <vector>
-
+static void SamplerThreadWrapper(void *param)
+{
+    SamplerThread *sampler = static_cast<SamplerThread *>(param);
+    sampler->Run();
+}
 SamplerThread::SamplerThread(SysConfig &config)
     : cfg(config)
 {
+    // mutex = xSemaphoreCreateMutex();
+    // if (mutex == NULL) {
+    //     // Handle error, mutex wasn't created
+    //     LOGSS.println("SamplerThread: Mutex Create Failed");
+    // }
+    xTaskCreate(SamplerThreadWrapper, "sample", 1024 * 20, this, 1, NULL);
 }
 
 void SamplerThread::Run()
 {
     // wifi = new WiFiThread(cfg);
-    // lora = new LoRaThread(cfg); // Extern
+    lora = new LoRaThread(cfg);
     // sd   = new SDThread(cfg);
-
     std::vector<sensor_base *> sensors;
     // sensors.push_back(new buildin_light_sensor());
     // sensors.push_back(new buildin_mic());
@@ -49,6 +58,7 @@ void SamplerThread::Run()
             if ((this->cfg.lora_status != LORA_JOIN_SUCCESS && this->cfg.lora_status != LORA_SEND_SUCCESS)) {
                 LOGSS.println("Sampler: Wait for LoRa To Join");
                 delay(5000);
+                cfg.unlock();
                 continue;
             }
             cfg.unlock();
@@ -70,7 +80,9 @@ void SamplerThread::Run()
             }
             // LOGSS.println("SamplerThread");
         }
+        lora->lock();
         lora->LoRaPushData(datas);
+        lora->unlock();
         // wifi->WiFiPushData(datas);
         // sd->SDPushData(datas);
         // display.UIPushData(datas);

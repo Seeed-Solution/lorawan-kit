@@ -66,14 +66,29 @@ struct grove_ai_vision_data {
  * In case of continuous unsuccessful connection, the network will be connected once every 10
  * minutes
  */
-
-LoRaThread::LoRaThread(SysConfig &config) : cfg(config){};
+static void LoRaThreadWrapper(void *param)
+{
+    // SamplerThread *sampler = static_cast<SamplerThread *>(param);
+    LoRaThread *lora = static_cast<LoRaThread *>(param);
+    lora->Run();
+}
+LoRaThread::LoRaThread(SysConfig &config) : cfg(config)
+{
+    mutex = xSemaphoreCreateMutex();
+    if (mutex == NULL) {
+        // Handle error, mutex wasn't created
+        LOGSS.println("LoRaThread: Mutex Create Failed");
+    }
+    xTaskCreate(LoRaThreadWrapper, "lora", 1024 * 20, this, 2, NULL);
+    // LOGSS.println("LoRaThread: Created");
+};
 
 void LoRaThread::Init()
 {
     if (!lorae5->begin(DSKLORAE5_SWSERIAL_PINS, NULL, NULL, LORA_RX, LORA_TX)) {
+    // if (!lorae5->begin(DSKLORAE5_HWSERIAL_CUSTOM, &Serial1)) {
         cfg.lora_status = LORA_INIT_FAILED;
-        LOGSS.println("LoRa E5 Init Failed");
+        LOGSS.println("LoRaThread: LoRa E5 Init Failed");
         return;
     }
 
@@ -86,11 +101,11 @@ void LoRaThread::Init()
     if (!lorae5->setup_sensecap(frequency, false,
                                 true)) { // Setup the LoRaWAN stack with the stored credentials
         cfg.lora_status = LORA_INIT_FAILED;
-        LOGSS.println("LoRa E5 Setup Sensecap Failed");
+        LOGSS.println("LoRaThread: LoRa E5 Setup Sensecap Failed");
         return;
     }
 
-    LOGSS.println("LoRa E5 Init OK");
+    LOGSS.println("LoRaThread: LoRa E5 Init OK");
     cfg.lora_status = LORA_INIT_SUCCESS;
 
     // join network immediately
@@ -101,9 +116,9 @@ void LoRaThread::Join()
 {
     if (!lorae5->join_sync()) {
         cfg.lora_status = LORA_JOIN_FAILED;
-        LOGSS.println("LoRa E5 Join Failed");
+        LOGSS.println("LoRaThread: LoRa E5 Join Failed");
     } else {
-        LOGSS.println("LoRa E5 Join Success");
+        LOGSS.println("LoRaThread: LoRa E5 Join Success");
         cfg.lora_status = LORA_JOIN_SUCCESS;
         // Send Device Info first lorawan message
         SendDeviceInfo();
@@ -355,9 +370,11 @@ void LoRaThread::Run()
         if (cfg.lock() && cfg.lora_on) {
             if (cfg.lora_status == LORA_INIT_START || cfg.lora_status == LORA_INIT_FAILED) {
                 // try to init the LoRa E5 5s after the last failure
-                delay(LORA_INIT_DELAY);
                 LOGSS.println("LoRa E5 Init Start");
+                delay(LORA_INIT_DELAY);
+                this->lock();
                 Init();
+                this->unlock();
                 cfg.unlock();
                 continue;
             }
@@ -366,7 +383,9 @@ void LoRaThread::Run()
                 // try to join the LoRa E5 5 minutes  after the last failure
                 // DelayMinutes(1);
                 delay(LORA_JOIN_DELAY);
+                this->lock();
                 Join();
+                this->unlock();
                 cfg.unlock();
                 continue;
             }
@@ -380,6 +399,7 @@ void LoRaThread::Run()
                 //     // Delay(Ticks::SecondsToTicks(30));
                 //     continue;
                 // }
+                this->lock();
                 if (!SendGroveSensorData()) {
                     lora_data_ready = true;
                     // try to send the grove sensor data after the last failure
@@ -388,6 +408,7 @@ void LoRaThread::Run()
                     cfg.unlock();
                     continue;
                 }
+                this->unlock();
                 // if (!SendAiVisionData()) {
                 //     lora_data_ready = true;
                 //     // try to send the Ai Vision data 5 minutes  after the last failure
@@ -410,6 +431,7 @@ void LoRaThread::Run()
             cfg.lora_rssi       = 0;
         }
         // 暂时延时处理
+        LOGSS.println("LoRa E5 Run..END");
         delay(1000);
     }
 }
