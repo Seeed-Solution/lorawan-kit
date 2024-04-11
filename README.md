@@ -1,11 +1,12 @@
-### bootloader 固件烧录
+### bootloader firmware burning
 
-运行 Python 脚本去进行烧录 bootloader，以便于采用 uf2 文件格式拖拽固件
+Run the Python script to burn the bootloader so that the firmware can be dragged and dropped using the uf2 file format.
+
 ```python
-python ./main.py
+python . /main.py
 ```
 
-具体请查看：https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/#uf2-bootloader
+See: https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/#uf2-bootloader
 
-### 拖拽固件
-在XIAO弹出的 文件夹中， 拖进对应的 firmware.uf2
+### Drag and drop the firmware
+In the  popup folder, drag in the corresponding `firmware.uf2`
